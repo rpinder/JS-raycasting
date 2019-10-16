@@ -121,7 +121,6 @@ function keyDownHandler(event) {
         break;
     case "D":
         dPressed = true;
-        console.log("dpressed");
         break;
     case "W":
         wPressed = true;
