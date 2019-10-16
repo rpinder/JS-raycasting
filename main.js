@@ -4,14 +4,17 @@ canvas.width = 800;
 canvas.height = 600;
 
 var boundaries = [];
+var walls = [];
 var anglefacing = 0;
-var x = 300;
-var y = 200;
+var x = 150;
+var y = 300;
 
 var aPressed = false;
 var sPressed = false;
 var dPressed = false;
 var wPressed = false;
+
+var view3d = false;
 
 class Ray {
     constructor(x, y, dir) {
@@ -23,7 +26,7 @@ class Ray {
         this.minDistance = 1000000;
     }
 
-    draw() {
+    draw2d() {
         ctx.strokeStyle = 'white';
         ctx.beginPath();
         ctx.moveTo(x, y);
@@ -33,6 +36,17 @@ class Ray {
             ctx.lineTo(this.posX + 1000 * Math.cos(this.angle), this.posY + 1000 * Math.cos(this.angle));
         }
         ctx.stroke();
+    }
+
+    draw3d() {
+        ctx.strokeStyle = 'white'
+        for (var i = 0; i < 800; i++) {
+            ctx.beginPath();
+            var height = 600 / this.minDistance;
+            ctx.moveTo(i,300-height/2);
+            ctx.lineTo(i,300+height/2);
+            ctx.stroke();
+        }
     }
 
     collisionTest() {
@@ -85,13 +99,27 @@ class Boundary {
     }
 }
 
+class Wall {
+    constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.width = w;
+        this.height = h;
+
+        boundaries.push(new Boundary(x, y, x+w, y));
+        boundaries.push(new Boundary(x, y, x, y+h));
+        boundaries.push(new Boundary(x+w, y, x+w, y+h));
+        boundaries.push(new Boundary(x, y+h, x+w, y+h));
+    }
+}
+
 function keyDownHandler(event) {
     var keyPressed = String.fromCharCode(event.keyCode);
     switch (keyPressed) {
     case "A":
         aPressed = true;
         break;
-     case "D":
+    case "D":
         dPressed = true;
         break;
     case "W":
@@ -99,6 +127,9 @@ function keyDownHandler(event) {
         break;
     case "S":
         sPressed = true;
+        break;
+    case "H":
+        view3d = !view3d;
         break;
     }
 }
@@ -120,55 +151,100 @@ function keyUpHandler(event) {
         break;
     }
 }
- 
+
 function update() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0,0,800,600);
 
+    var moveLockForward = false;
+    var moveLockBackward = false;
+
+    for (var i = 0; i < walls.length; i++) {
+        if (x + 20 * Math.cos(anglefacing) > walls[i].x &&
+            x + 20 * Math.cos(anglefacing) < walls[i].x + walls[i].width &&
+            y + 20 * Math.sin(anglefacing) > walls[i].y &&
+            y + 20 * Math.sin(anglefacing) < walls[i].y + walls[i].height) {
+            moveLockForward = true;
+        }
+
+        if (x - 20 * Math.cos(anglefacing) > walls[i].x &&
+            x - 20 * Math.cos(anglefacing) < walls[i].x + walls[i].width &&
+            y - 20 * Math.sin(anglefacing) > walls[i].y &&
+            y - 20 * Math.sin(anglefacing) < walls[i].y + walls[i].height) {
+            moveLockBackward = true;
+        } 
+    }
+
     if (aPressed) {
-        anglefacing-=0.1;
+        anglefacing-=0.05;
     }
     if (dPressed) {
-        anglefacing+=0.1;
+        anglefacing+=0.05;
     }
-    if (wPressed) {
-        x += 5 * Math.cos(anglefacing);
-        y += 5 * Math.sin(anglefacing);
+    if (wPressed && !moveLockForward) {
+        x += 2.5 * Math.cos(anglefacing);
+        y += 2.5 * Math.sin(anglefacing);
     }
-    if (sPressed) {
+    if (sPressed && !moveLockBackward) {
         x -= 5 * Math.cos(anglefacing);
         y -= 5 * Math.sin(anglefacing);
     }
-  
+    
 
-   var rays = [];
-    for (var i = -Math.PI/3 + anglefacing; i < Math.PI/3 + anglefacing; i += (Math.PI/6) / 800) {
+    var rays = [];
+    for (var i = -Math.PI/6 + anglefacing; i < Math.PI/6 + anglefacing; i += (Math.PI/3) / 800) {
         rays.push(new Ray(x,y, i))
     }
+
+
     for (var i = 0; i < boundaries.length; i++) {
-        boundaries[i].draw();
+        if (view3d == false) {
+            boundaries[i].draw();
+        }
     }
     for (var i = 0; i < rays.length; i++) {
         rays[i].collisionTest();
-        rays[i].draw();
+        if (view3d == true) {
+            var height = 600 / (0.03 * rays[i].minDistance);
+            if (height > 600) {
+                height = 600;
+            }
+
+            brightness = Math.round(height / ((600 / 255)**0.1));
+            if (brightness > 255) {
+                brightness = 255;
+            }
+            colorcode = '#' + brightness.toString(16) + brightness.toString(16) + brightness.toString(16);
+            ctx.strokeStyle = colorcode;
+            ctx.beginPath();
+            ctx.moveTo(i,300-height/2);
+            ctx.lineTo(i,300+height/2);
+            ctx.stroke();
+
+            ctx.strokeStyle = 'blue';
+            ctx.beginPath();
+            ctx.moveTo(i, 300-height/2);
+            ctx.lineTo(i, 0);
+            ctx.stroke();
+        } else {
+            rays[i].draw2d();
+        }
     }
 }
-boundaries.push(new Boundary(0, 0, 800, 0))
-boundaries.push(new Boundary(0, 0, 0, 600))
-boundaries.push(new Boundary(800, 600, 800, 0))
-boundaries.push(new Boundary(800, 600, 0, 600))
+walls.push(new Wall(0,-100,800,100));
+walls.push(new Wall(0,600,800,100));
+walls.push(new Wall(-100,-100,100,800));
+walls.push(new Wall(800,-100,800,800));
 
-boundaries.push(new Boundary(700, 100, 700, 500))
-boundaries.push(new Boundary(100, 100, 100, 500))
-boundaries.push(new Boundary(300, 100, 500, 100))
-boundaries.push(new Boundary(200, 400, 500, 400))
-boundaries.push(new Boundary(400, 100, 400, 300))
-boundaries.push(new Boundary(300, 300, 400, 300))
-boundaries.push(new Boundary(700, 200, 500, 200))
+walls.push(new Wall(100,100,100,100));
+walls.push(new Wall(300,100,100,300));
+walls.push(new Wall(400,300,100,100));
+walls.push(new Wall(500,100,200,100));
+walls.push(new Wall(300,500,100,100));
 
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
 
 setInterval(function() {
     update();
-}, 1000/30);
+}, 1000/60);
