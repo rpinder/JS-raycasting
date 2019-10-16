@@ -5,8 +5,8 @@ canvas.height = 600;
 
 var boundaries = [];
 var anglefacing = 0;
-var x = 400;
-var y = 300;
+var x = 300;
+var y = 200;
 
 var aPressed = false;
 var sPressed = false;
@@ -142,7 +142,7 @@ function update() {
   
 
    var rays = [];
-    for (var i = -Math.PI/3 + anglefacing; i < Math.PI/3 + anglefacing; i += (Math.PI/6) / 60) {
+    for (var i = -Math.PI/3 + anglefacing; i < Math.PI/3 + anglefacing; i += (Math.PI/6) / 800) {
         rays.push(new Ray(x,y, i))
     }
     for (var i = 0; i < boundaries.length; i++) {
@@ -153,17 +153,18 @@ function update() {
         rays[i].draw();
     }
 }
-
-boundaries.push(new Boundary(700, 100, 700, 500))
-boundaries.push(new Boundary(100, 100, 100, 500))
-boundaries.push(new Boundary(300, 100, 500, 100))
-boundaries.push(new Boundary(200, 400, 500, 400))
-
 boundaries.push(new Boundary(0, 0, 800, 0))
 boundaries.push(new Boundary(0, 0, 0, 600))
 boundaries.push(new Boundary(800, 600, 800, 0))
 boundaries.push(new Boundary(800, 600, 0, 600))
 
+boundaries.push(new Boundary(700, 100, 700, 500))
+boundaries.push(new Boundary(100, 100, 100, 500))
+boundaries.push(new Boundary(300, 100, 500, 100))
+boundaries.push(new Boundary(200, 400, 500, 400))
+boundaries.push(new Boundary(400, 100, 400, 300))
+boundaries.push(new Boundary(300, 300, 400, 300))
+boundaries.push(new Boundary(700, 200, 500, 200))
 
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
