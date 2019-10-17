@@ -76,16 +76,34 @@ class Ray {
             ctx.stroke();
         }
     }
-
-    draw3d() {
-        ctx.strokeStyle = 'white'
-        for (var i = 0; i < 800; i++) {
-            ctx.beginPath();
-            var height = 600 / this.minDistance;
-            ctx.moveTo(i,300-height/2);
-            ctx.lineTo(i,300+height/2);
-            ctx.stroke();
+    
+    draw3d(x) {
+        var height = 600 / (0.03 * this.minDistance);
+        if (height > 600) {
+            height = 600;
         }
+
+        var brightness = Math.round(height / ((600 / 255)**0.1));
+        if (brightness > 255) {
+            brightness = 255;
+        }
+        var colorcode = '#'
+            + brightness.toString(16)
+            + brightness.toString(16)
+            + brightness.toString(16);
+
+        ctx.strokeStyle = colorcode;
+        ctx.beginPath();
+        ctx.moveTo(x,300-height/2);
+        ctx.lineTo(x,300+height/2);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'blue';
+        ctx.beginPath();
+        ctx.moveTo(x, 300-height/2);
+        ctx.lineTo(x, 0);
+        ctx.stroke();
+
     }
 
     collisionTest() {
@@ -196,52 +214,38 @@ function clearScreen() {
     ctx.fillRect(0,0,800,600);
 }
 
-
-function update() {
-    clearScreen();
-    player.collision();
-    player.movement();
-
-    var rays = [];
+function castRays() {
+    rays = [];
     for (var i = -Math.PI/6 + player.angle; i < Math.PI/6 + player.angle; i += (Math.PI/3) / 800) {
         rays.push(new Ray(player.x,player.y, i))
     }
+}
 
-
-    for (var i = 0; i < boundaries.length; i++) {
-        if (view3d == false) {
+function render() {
+    clearScreen();
+    if (view3d == false) {
+        for (var i = 0; i < boundaries.length; i++) {
             boundaries[i].draw();
         }
-    }
-    for (var i = 0; i < rays.length; i++) {
-        rays[i].collisionTest();
-        if (view3d == true) {
-            var height = 600 / (0.03 * rays[i].minDistance);
-            if (height > 600) {
-                height = 600;
-            }
-
-            brightness = Math.round(height / ((600 / 255)**0.1));
-            if (brightness > 255) {
-                brightness = 255;
-            }
-            colorcode = '#' + brightness.toString(16) + brightness.toString(16) + brightness.toString(16);
-            ctx.strokeStyle = colorcode;
-            ctx.beginPath();
-            ctx.moveTo(i,300-height/2);
-            ctx.lineTo(i,300+height/2);
-            ctx.stroke();
-
-            ctx.strokeStyle = 'blue';
-            ctx.beginPath();
-            ctx.moveTo(i, 300-height/2);
-            ctx.lineTo(i, 0);
-            ctx.stroke();
-        } else {
+        for (var i = 0; i < rays.length; i++) {
+            rays[i].collisionTest();
             rays[i].draw2d();
+        }
+    } else {
+        for (var i = 0; i < rays.length; i++) {
+            rays[i].collisionTest();
+            rays[i].draw3d(i);
         }
     }
 }
+
+function update() {
+    player.collision();
+    player.movement();
+    castRays();
+    render();
+}
+
 walls.push(new Wall(0,-100,800,100));
 walls.push(new Wall(0,600,800,100));
 walls.push(new Wall(-100,-100,100,800));
