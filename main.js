@@ -161,7 +161,7 @@ function clearScreen() {
 }
 
 function playerCollision() {
-     var moveLockForward = false;
+    var moveLockForward = false;
     var moveLockBackward = false;
 
     for (var i = 0; i < walls.length; i++) {
@@ -171,14 +171,13 @@ function playerCollision() {
             player.y + 20 * Math.sin(player.angle) < walls[i].y + walls[i].height) {
             moveLockForward = true;
         }
-
+        
         if (player.x - 20 * Math.cos(player.angle) > walls[i].x &&
             player.x - 20 * Math.cos(player.angle) < walls[i].x + walls[i].width &&
             player.y - 20 * Math.sin(player.angle) > walls[i].y &&
             player.y - 20 * Math.sin(player.angle) < walls[i].y + walls[i].height) {
             moveLockBackward = true;
         } 
-        
     }
 }
 
