@@ -5,9 +5,6 @@ canvas.height = 600;
 
 var boundaries = [];
 var walls = [];
-var anglefacing = 0;
-var x = 150;
-var y = 300;
 
 var aPressed = false;
 var sPressed = false;
@@ -15,6 +12,12 @@ var dPressed = false;
 var wPressed = false;
 
 var view3d = false;
+
+var player = {
+    angle: 0,
+    x: 150,
+    y: 300
+}
 
 class Ray {
     constructor(x, y, dir) {
@@ -29,7 +32,7 @@ class Ray {
     draw2d() {
         ctx.strokeStyle = 'white';
         ctx.beginPath();
-        ctx.moveTo(x, y);
+        ctx.moveTo(player.x, player.y);
         if (this.colx != null) {
             ctx.lineTo(this.colx, this.coly)
         } else {
@@ -152,48 +155,56 @@ function keyUpHandler(event) {
     }
 }
 
-function update() {
+function clearScreen() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0,0,800,600);
+}
 
-    var moveLockForward = false;
+function playerCollision() {
+     var moveLockForward = false;
     var moveLockBackward = false;
 
     for (var i = 0; i < walls.length; i++) {
-        if (x + 20 * Math.cos(anglefacing) > walls[i].x &&
-            x + 20 * Math.cos(anglefacing) < walls[i].x + walls[i].width &&
-            y + 20 * Math.sin(anglefacing) > walls[i].y &&
-            y + 20 * Math.sin(anglefacing) < walls[i].y + walls[i].height) {
+        if (player.x + 20 * Math.cos(player.angle) > walls[i].x &&
+            player.x + 20 * Math.cos(player.angle) < walls[i].x + walls[i].width &&
+            player.y + 20 * Math.sin(player.angle) > walls[i].y &&
+            player.y + 20 * Math.sin(player.angle) < walls[i].y + walls[i].height) {
             moveLockForward = true;
         }
 
-        if (x - 20 * Math.cos(anglefacing) > walls[i].x &&
-            x - 20 * Math.cos(anglefacing) < walls[i].x + walls[i].width &&
-            y - 20 * Math.sin(anglefacing) > walls[i].y &&
-            y - 20 * Math.sin(anglefacing) < walls[i].y + walls[i].height) {
+        if (player.x - 20 * Math.cos(player.angle) > walls[i].x &&
+            player.x - 20 * Math.cos(player.angle) < walls[i].x + walls[i].width &&
+            player.y - 20 * Math.sin(player.angle) > walls[i].y &&
+            player.y - 20 * Math.sin(player.angle) < walls[i].y + walls[i].height) {
             moveLockBackward = true;
         } 
+        
     }
+}
+
+function update() {
+    clearScreen();
+    playerCollision();
 
     if (aPressed) {
-        anglefacing-=0.05;
+        player.angle-=0.05;
     }
     if (dPressed) {
-        anglefacing+=0.05;
+        player.angle+=0.05;
     }
     if (wPressed && !moveLockForward) {
-        x += 2.5 * Math.cos(anglefacing);
-        y += 2.5 * Math.sin(anglefacing);
+        player.x += 2.5 * Math.cos(player.angle);
+        player.y += 2.5 * Math.sin(player.angle);
     }
     if (sPressed && !moveLockBackward) {
-        x -= 5 * Math.cos(anglefacing);
-        y -= 5 * Math.sin(anglefacing);
+        player.x -= 2.5 * Math.cos(player.angle);
+        player.y -= 2.5 * Math.sin(player.angle);
     }
     
 
     var rays = [];
-    for (var i = -Math.PI/6 + anglefacing; i < Math.PI/6 + anglefacing; i += (Math.PI/3) / 800) {
-        rays.push(new Ray(x,y, i))
+    for (var i = -Math.PI/6 + player.angle; i < Math.PI/6 + player.angle; i += (Math.PI/3) / 800) {
+        rays.push(new Ray(player.x,player.y, i))
     }
 
 
