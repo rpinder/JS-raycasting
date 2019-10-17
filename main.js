@@ -3,15 +3,12 @@ var ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
 
-var boundaries = [];
-var walls = [];
-
-var aPressed = false;
-var sPressed = false;
-var dPressed = false;
-var wPressed = false;
-
-var view3d = false;
+var game = {
+    view3d: false,
+    boundaries: [],
+    walls: [],
+    keysHeld: []
+}
 
 var player = {
     angle: 0,
@@ -23,34 +20,34 @@ var player = {
         this.moveLockForward = false;
         this.moveLockBackward = false;
 
-        for (var i = 0; i < walls.length; i++) {
-            if (this.x + 20 * Math.cos(this.angle) > walls[i].x &&
-                this.x + 20 * Math.cos(this.angle) < walls[i].x + walls[i].width &&
-                this.y + 20 * Math.sin(this.angle) > walls[i].y &&
-                this.y + 20 * Math.sin(this.angle) < walls[i].y + walls[i].height) {
+        for (var i = 0; i < game.walls.length; i++) {
+            if (this.x + 20 * Math.cos(this.angle) > game.walls[i].x &&
+                this.x + 20 * Math.cos(this.angle) < game.walls[i].x + game.walls[i].width &&
+                this.y + 20 * Math.sin(this.angle) > game.walls[i].y &&
+                this.y + 20 * Math.sin(this.angle) < game.walls[i].y + game.walls[i].height) {
                 this.moveLockForward = true;
             }
             
-            if (this.x - 20 * Math.cos(this.angle) > walls[i].x &&
-                this.x - 20 * Math.cos(this.angle) < walls[i].x + walls[i].width &&
-                this.y - 20 * Math.sin(this.angle) > walls[i].y &&
-                this.y - 20 * Math.sin(this.angle) < walls[i].y + walls[i].height) {
+            if (this.x - 20 * Math.cos(this.angle) > game.walls[i].x &&
+                this.x - 20 * Math.cos(this.angle) < game.walls[i].x + game.walls[i].width &&
+                this.y - 20 * Math.sin(this.angle) > game.walls[i].y &&
+                this.y - 20 * Math.sin(this.angle) < game.walls[i].y + game.walls[i].height) {
                 this.moveLockBackward = true;
             } 
         }
     },
     movement: function() {
-        if (aPressed) {
+        if (game.keysHeld['A'.charCodeAt(0)]) {
             this.angle-=0.05;
         }
-        if (dPressed) {
+        if (game.keysHeld['D'.charCodeAt(0)]) {
             this.angle+=0.05;
         }
-        if (wPressed && !this.moveLockForward) {
+        if (game.keysHeld['W'.charCodeAt(0)] && !this.moveLockForward) {
             this.x += 2.5 * Math.cos(this.angle);
             this.y += 2.5 * Math.sin(this.angle);
         }
-        if (sPressed && !this.moveLockBackward) {
+        if (game.keysHeld['S'.charCodeAt(0)] && !this.moveLockBackward) {
             this.x -= 2.5 * Math.cos(this.angle);
             this.y -= 2.5 * Math.sin(this.angle);
         } 
@@ -78,12 +75,12 @@ class Ray {
     }
     
     draw3d(x) {
-        var height = 600 / (0.03 * this.minDistance);
-        if (height > 600) {
-            height = 600;
+        var height = canvas.height / (0.03 * this.minDistance);
+        if (height > canvas.height) {
+            height = canvas.height;
         }
 
-        var brightness = Math.round(height / ((600 / 255)**0.1));
+        var brightness = Math.round(height / ((canvas.height / 255)**0.1));
         if (brightness > 255) {
             brightness = 255;
         }
@@ -107,16 +104,16 @@ class Ray {
     }
 
     collisionTest() {
-        for (var i = 0; i < boundaries.length; i++) {
+        for (var i = 0; i < game.boundaries.length; i++) {
             var x1 = this.posX;
             var y1 = this.posY;
             var x2 = this.posX + 10 * Math.cos(this.angle);
             var y2 = this.posY + 10 * Math.sin(this.angle);
 
-            var x3 = boundaries[i].startX;
-            var y3 = boundaries[i].startY;
-            var x4 = boundaries[i].endX;
-            var y4 = boundaries[i].endY;
+            var x3 = game.boundaries[i].startX;
+            var y3 = game.boundaries[i].startY;
+            var x4 = game.boundaries[i].endX;
+            var y4 = game.boundaries[i].endY;
 
             var denominator = (x1 - x2)*(y3 - y4) - (y1 - y2)*(x3 - x4)
             if (denominator == 0) {
@@ -163,78 +160,51 @@ class Wall {
         this.width = w;
         this.height = h;
 
-        boundaries.push(new Boundary(x, y, x+w, y));
-        boundaries.push(new Boundary(x, y, x, y+h));
-        boundaries.push(new Boundary(x+w, y, x+w, y+h));
-        boundaries.push(new Boundary(x, y+h, x+w, y+h));
+        game.boundaries.push(new Boundary(x, y, x+w, y));
+        game.boundaries.push(new Boundary(x, y, x, y+h));
+        game.boundaries.push(new Boundary(x+w, y, x+w, y+h));
+        game.boundaries.push(new Boundary(x, y+h, x+w, y+h));
     }
 }
 
 function keyDownHandler(event) {
-    var keyPressed = String.fromCharCode(event.keyCode);
-    switch (keyPressed) {
-    case "A":
-        aPressed = true;
-        break;
-    case "D":
-        dPressed = true;
-        break;
-    case "W":
-        wPressed = true;
-        break;
-    case "S":
-        sPressed = true;
-        break;
-    case "H":
-        view3d = !view3d;
-        break;
+    game.keysHeld[event.keyCode] = true;
+
+    if (event.keyCode == 'H'.charCodeAt(0)) {
+        game.view3d = !game.view3d;
     }
 }
 
 function keyUpHandler(event) {
-    var keyReleased = String.fromCharCode(event.keyCode);
-    switch (keyReleased) {
-    case "A":
-        aPressed = false;
-        break;
-    case "D":
-        dPressed = false;
-        break;
-    case "W":
-        wPressed = false;
-        break;
-    case "S":
-        sPressed = false;
-        break;
-    }
+    game.keysHeld[event.keyCode] = false;
 }
 
 function clearScreen() {
     ctx.fillStyle = 'black';
-    ctx.fillRect(0,0,800,600);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function castRays() {
-    rays = [];
-    for (var i = -Math.PI/6 + player.angle; i < Math.PI/6 + player.angle; i += (Math.PI/3) / 800) {
-        rays.push(new Ray(player.x,player.y, i))
+    game.rays = [];
+    for (var i = -Math.PI/6 + player.angle; i < Math.PI/6 + player.angle; i += (Math.PI/3) / canvas.width) {
+        game.rays.push(new Ray(player.x,player.y, i))
     }
 }
 
 function render() {
     clearScreen();
-    if (view3d == false) {
-        for (var i = 0; i < boundaries.length; i++) {
-            boundaries[i].draw();
+    if (game.view3d == false) {
+        for (var i = 0; i < game.boundaries.length; i++) {
+            game.boundaries[i].draw();
         }
-        for (var i = 0; i < rays.length; i++) {
-            rays[i].collisionTest();
-            rays[i].draw2d();
+        for (var i = 0; i < game.rays.length; i++) {
+            game.rays[i].collisionTest();
+            game.rays[i].draw2d();
         }
     } else {
-        for (var i = 0; i < rays.length; i++) {
-            rays[i].collisionTest();
-            rays[i].draw3d(i);
+        for (var i = 0; i < game.rays.length; i++) {
+            game.rays[i].collisionTest();
+            game.rays[i].draw3d(i);
         }
     }
 }
@@ -246,16 +216,16 @@ function update() {
     render();
 }
 
-walls.push(new Wall(0,-100,800,100));
-walls.push(new Wall(0,600,800,100));
-walls.push(new Wall(-100,-100,100,800));
-walls.push(new Wall(800,-100,800,800));
+game.walls.push(new Wall(0,-100,800,100));
+game.walls.push(new Wall(0,600,800,100));
+game.walls.push(new Wall(-100,-100,100,800));
+game.walls.push(new Wall(800,-100,800,800));
 
-walls.push(new Wall(100,100,100,100));
-walls.push(new Wall(300,100,100,300));
-walls.push(new Wall(400,300,100,100));
-walls.push(new Wall(500,100,200,100));
-walls.push(new Wall(300,500,100,100));
+game.walls.push(new Wall(100,100,100,100));
+game.walls.push(new Wall(300,100,100,300));
+game.walls.push(new Wall(400,300,100,100));
+game.walls.push(new Wall(500,100,200,100));
+game.walls.push(new Wall(300,500,100,100));
 
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
