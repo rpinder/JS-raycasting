@@ -68,15 +68,13 @@ class Ray {
     }
 
     draw2d() {
-        ctx.strokeStyle = 'white';
-        ctx.beginPath();
-        ctx.moveTo(player.x, player.y);
         if (this.colx != null) {
+            ctx.strokeStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
             ctx.lineTo(this.colx, this.coly)
-        } else {
-            ctx.lineTo(this.posX + 1000 * Math.cos(this.angle), this.posY + 1000 * Math.cos(this.angle));
+            ctx.stroke();
         }
-        ctx.stroke();
     }
 
     draw3d() {
