@@ -3,17 +3,21 @@ var ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
 
+var wall = new Image();
+wall.src = "walljpg.jpg";
+
 var game = {
-    view3d: false,
+    view3d: true,
     boundaries: [],
     walls: [],
-    keysHeld: []
+    keysHeld: [],
+    won: false
 }
 
 var player = {
     angle: 0,
-    x: 150,
-    y: 300,
+    x: 100,
+    y: 100,
     moveLockForward: false,
     moveLockBackward: false,
     collision: function() {
@@ -38,18 +42,18 @@ var player = {
     },
     movement: function() {
         if (game.keysHeld['A'.charCodeAt(0)]) {
-            this.angle-=0.05;
+            this.angle-=0.1;
         }
         if (game.keysHeld['D'.charCodeAt(0)]) {
-            this.angle+=0.05;
+            this.angle+=0.1;
         }
         if (game.keysHeld['W'.charCodeAt(0)] && !this.moveLockForward) {
-            this.x += 2.5 * Math.cos(this.angle);
-            this.y += 2.5 * Math.sin(this.angle);
+            this.x += 5 * Math.cos(this.angle);
+            this.y += 5 * Math.sin(this.angle);
         }
         if (game.keysHeld['S'.charCodeAt(0)] && !this.moveLockBackward) {
-            this.x -= 2.5 * Math.cos(this.angle);
-            this.y -= 2.5 * Math.sin(this.angle);
+            this.x -= 5 * Math.cos(this.angle);
+            this.y -= 5 * Math.sin(this.angle);
         } 
     }
 }
@@ -61,6 +65,7 @@ class Ray {
         this.angle = dir;
         this.colx = null;
         this.coly = null;
+        this.textureOffset = 0;
         this.minDistance = 1000000;
     }
 
@@ -75,31 +80,21 @@ class Ray {
     }
     
     draw3d(x) {
-        var height = canvas.height / (0.03 * this.minDistance);
-        if (height > canvas.height) {
-            height = canvas.height;
-        }
-
-        var brightness = Math.round(height / ((canvas.height / 255)**0.1));
-        if (brightness > 255) {
-            brightness = 255;
-        }
-        var colorcode = '#'
-            + brightness.toString(16)
-            + brightness.toString(16)
-            + brightness.toString(16);
-
-        ctx.strokeStyle = colorcode;
-        ctx.beginPath();
-        ctx.moveTo(x,300-height/2);
-        ctx.lineTo(x,300+height/2);
-        ctx.stroke();
+        var height = (64 * canvas.height) / this.minDistance;
 
         ctx.strokeStyle = 'blue';
         ctx.beginPath();
         ctx.moveTo(x, 300-height/2);
         ctx.lineTo(x, 0);
         ctx.stroke();
+
+        ctx.strokeStyle = "#4a4b46";
+        ctx.beginPath();
+        ctx.moveTo(x, 300+height/2);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+
+        ctx.drawImage(wall, this.textureOffset * 64, 0, 1, 64, x, 300-height/2, 1, height);
 
     }
 
@@ -131,6 +126,7 @@ class Ray {
                 this.colx = x;
                 this.coly = y;
                 this.minDistance = distance;
+                this.textureOffset = u;
             }
         }
     }
@@ -210,22 +206,131 @@ function render() {
 }
 
 function update() {
-    player.collision();
-    player.movement();
-    castRays();
-    render();
+    if (!game.won) {
+        player.collision();
+        player.movement();
+        castRays();
+        render();
+        ctx.fillStyle = "red";
+        ctx.font = "20px Serif";
+        ctx.fillText (player.x.toString(10), 10, 30);
+        ctx.fillText (player.y.toString(10), 10, 60);
+        if (player.x > (tilemap.length - 2) * 64 && player.y > (tilemap.length - 2) * 64) {
+            game.won = true;
+        }
+    } else {
+        ctx.fillStyle = "red";
+        ctx.font = "50px Serif";
+        ctx.fillText ("You Won!", 300, 300);
+    }
 }
 
-game.walls.push(new Wall(0,-100,800,100));
-game.walls.push(new Wall(0,600,800,100));
-game.walls.push(new Wall(-100,-100,100,800));
-game.walls.push(new Wall(800,-100,800,800));
+var tilemap = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+]
 
-game.walls.push(new Wall(100,100,100,100));
-game.walls.push(new Wall(300,100,100,300));
-game.walls.push(new Wall(400,300,100,100));
-game.walls.push(new Wall(500,100,200,100));
-game.walls.push(new Wall(300,500,100,100));
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+function backtracker(x, y) {
+    tilemap[x][y] = 0;
+    var nx = 0;
+    var ny = 0;
+    directions = ['n','e','s','w'];
+    shuffle(directions);
+    for (var i = 0; i < directions.length; i++) {
+        if (directions[i] == 'n') {
+            if (y != 1) {
+                if (tilemap[x][y - 2] == 1) {
+                    tilemap[x][y - 1] = 0
+                    backtracker(x, y-2);
+                }
+            }
+        }  
+        if (directions[i] == 'e') {
+            if (x != tilemap.length - 2) {
+                if (tilemap[x + 2][y] == 1) {
+                    tilemap[x + 1][y] = 0
+                    backtracker(x+2, y);
+                }
+            }
+        }
+        if (directions[i] == 's') {
+            if (y != tilemap.length - 2) {
+                if (tilemap[x][y + 2] == 1) {
+                    tilemap[x][y + 1] = 0
+                    backtracker(x, y+2);
+                }
+            }
+        }
+        if (directions[i] == 'w') {
+            if (x != 1) {
+                if (tilemap[x - 2][y] == 1) {
+                    tilemap[x - 1][y] = 0
+                    backtracker(x-2, y);
+                }
+            }
+        }
+
+    }
+}
+
+backtracker(1,1);
+
+for (var i = 0; i < tilemap.length; i++ ) {
+    for (var j = 0; j < tilemap[0].length; j++) {
+        if (tilemap[j][i] == 1) {
+            game.walls.push(new Wall(i * 64, j * 64, 64, 64));
+        }
+    }
+}
+
+// game.walls.push(new Wall(0,-100,800,100));
+// game.walls.push(new Wall(0,600,800,100));
+// game.walls.push(new Wall(-100,-100,100,800));
+// game.walls.push(new Wall(800,-100,800,800));
+
+// game.walls.push(new Wall(100,100,100,100));
+// game.walls.push(new Wall(300,100,100,300));
+// game.walls.push(new Wall(400,300,100,100));
+// game.walls.push(new Wall(500,100,200,100));
+// game.walls.push(new Wall(300,500,100,100));
 
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
